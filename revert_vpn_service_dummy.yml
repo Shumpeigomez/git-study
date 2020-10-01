@@ -109,4 +109,4 @@
         primary_ipv4: "10.255.255.101"
         secondary_ipv4: "10.255.255.102"
         netmask: 24
-        description: "gw_interface for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"
+        description: "gw_interface for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"1
