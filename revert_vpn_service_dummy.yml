@@ -1,0 +1,112 @@
+- ha_uplink:
+    type: ha_interface
+    operation: read
+    user: admin-user
+    properties: |-
+        name: "kj1-ha-router-vpn-01-uplink"
+
+- vpn1:
+    type: vpn_service
+    operation: read
+    user: admin-user
+    properties: |-
+        description: ""
+
+- qos_be100:
+    type: qos_option
+    operation: read
+    user: admin-user
+    properties: |-
+        vpn_service_id: "{{vpn1}}"
+        bandwidth: "100"
+        qos_type: "besteffort"
+
+- vpn_gw1:
+    type: vpn_gateway
+    operation: create
+    user: admin-user
+    wait_for: |-
+        status: DOWN
+        timeout: 600
+        interval: 5
+    properties: |-
+        name: "esi-initial-vpn_gateway-resource"
+        vpn_service_id: "{{vpn1}}"
+        qos_option_id: "{{qos_be100}}"
+        uplink_interface_id: "{{ha_uplink}}"
+        uplink_vlan_id: "4"
+        local_as_number: "65000"
+        description: "VPN_gateway for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"
+
+- vpn_gw1_vpn_if:
+    type: vpn_interface
+    operation: create
+    user: admin-user
+    wait_for: |-
+        status: DOWN
+        timeout: 600
+        interval: 5
+    properties: |-
+        name: "esi-initial-vpn_interface-resource"
+        vpn_gw_id: "{{vpn_gw1}}"
+        primary: { "ip_address": "192.168.9.2/30", "bgp_peer_ip": "192.168.9.1", "bgp_router_id": "192.168.9.2"}
+        secondary: { "ip_address": "192.168.9.6/30", "bgp_peer_ip": "192.168.9.5", "bgp_router_id": "192.168.9.6"}
+        bgp_remote_as: "9598"
+        bgp_md5: "NTTCom0033"
+        description: "VPN_interface for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"
+
+- vpn_net:
+    type: network
+    operation: create
+    user: admin-user
+    wait_for: |-
+        status: ACTIVE
+        timeout: 180
+        interval: 2
+    properties: |-
+        name: "esi-initial-network-resource"
+        description: "network for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"
+
+- vpn_subnet:
+    type: subnet
+    operation: create
+    user: admin-user
+    wait_for: |-
+        status: ACTIVE
+        timeout: 600
+        interval: 5
+    properties: |-
+        name: "esi-initial-subnet-resource"
+        network_id: "{{vpn_net}}"
+        cidr: "10.255.255.0/24"
+
+- vpn_gw1_gw_if:
+    type: gw_interface
+    operation: create
+    user: admin-user
+    wait_for: |-
+        -
+            status: ACTIVE
+            timeout: 600
+            interval: 5
+        -
+            type: etcd
+            key: /monitoring/v2.0/gw_interfaces/{{vpn_gw1_gw_if}}
+            value:
+                status:
+                    primary: MASTER
+                    secondary: BACKUP
+                version: 1
+            timeout: 180
+            interval: 5
+    properties: |-
+        name: "esi-initial-gw_interface-resource"
+        service_type: "vpn"
+        vpn_gw_id: "{{vpn_gw1}}"
+        network_id: "{{vpn_net}}"
+        vrid: 103
+        gw_vipv4: "10.255.255.100"
+        primary_ipv4: "10.255.255.101"
+        secondary_ipv4: "10.255.255.102"
+        netmask: 24
+        description: "gw_interface for VPN connectivity created by ESI admin, in order to transfer status ACTIVE"
